@@ -1,0 +1,14 @@
+{
+	"domain": "obico_connect",
+	"name": "Obico Connect",
+	"version": "1.0",
+	"documentation": "https://github.com/theminor/obico-connect",
+	"requirements": [
+	  "requests",
+	  "backoff",
+	  "aiohttp"
+	],
+	"dependencies": [],
+	"codeowners": ["@theminor"],
+	"config_flow": true
+  }

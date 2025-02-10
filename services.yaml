@@ -1,0 +1,11 @@
+pause_print:
+  description: "Pause the print"
+  fields: {}
+
+resume_print:
+  description: "Resume the print"
+  fields: {}
+
+cancel_print:
+  description: "Cancel the print"
+  fields: {}
