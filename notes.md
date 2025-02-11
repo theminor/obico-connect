@@ -40,7 +40,7 @@
 }
 ```
 
-# Possible API points
+# Possible API points - Tried Pulling from Obico-Octoprint
 
 ## verify_code
 - Request: `POST /api/v1/octo/verify/?code=<code>`
@@ -153,3 +153,323 @@
 	}
 	}
 	```
+
+## Version
+# API Version
+- Endpoint: `/v1/version/`
+- Example Request: `GET /v1/version/`
+- Example Response:
+```
+{
+  "version": "1.0.0"
+}
+```
+
+# API Endpoints pulled from Obico-Server (backend)
+
+## Users
+- Endpoint: `/v1/users/`
+- Example Request: `GET /v1/users/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "username": "user1",
+      "email": "user1@example.com"
+    }
+  ]
+  ```
+
+## Printers
+- Endpoint: `/v1/printers/`
+- Example Request: `GET /v1/printers/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "name": "Printer1",
+      "status": "online"
+    }
+  ]
+  ```
+
+## Prints
+- Endpoint: `/v1/prints/`
+- Example Request: `GET /v1/prints/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "printer": 1,
+      "status": "completed"
+    }
+  ]
+  ```
+
+## GCode Files
+- Endpoint: `/v1/g_code_files/`
+- Example Request: `GET /v1/g_code_files/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "filename": "file1.gcode",
+      "printer": 1
+    }
+  ]
+  ```
+
+## GCode Folders
+- Endpoint: `/v1/g_code_folders/`
+- Example Request: `GET /v1/g_code_folders/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "name": "folder1",
+      "printer": 1
+    }
+  ]
+  ```
+
+## Print Shot Feedbacks
+- Endpoint: `/v1/printshotfeedbacks/`
+- Example Request: `GET /v1/printshotfeedbacks/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "print": 1,
+      "feedback": "Good"
+    }
+  ]
+  ```
+
+## OctoPrint Tunnel Usage
+- Endpoint: `/v1/tunnelusage/`
+- Example Request: `GET /v1/tunnelusage/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "tunnel": 1,
+      "usage": 100
+    }
+  ]
+  ```
+
+## Mobile Devices
+- Endpoint: `/v1/mobile_devices/`
+- Example Request: `GET /v1/mobile_devices/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "device_id": "device1",
+      "user": 1
+    }
+  ]
+  ```
+
+## One-Time Verification Codes
+- Endpoint: `/v1/onetimeverificationcodes/`
+- Example Request: `GET /v1/onetimeverificationcodes/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "code": "123456",
+      "user": 1
+    }
+  ]
+  ```
+
+## Shared Resources
+- Endpoint: `/v1/sharedresources/`
+- Example Request: `GET /v1/sharedresources/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "resource": "resource1",
+      "shared_with": 1
+    }
+  ]
+  ```
+
+## Printer Discovery
+- Endpoint: `/v1/printer_discovery/`
+- Example Request: `GET /v1/printer_discovery/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "printer": "printer1",
+      "status": "discovered"
+    }
+  ]
+  ```
+
+## One-Time Passcodes
+- Endpoint: `/v1/one_time_passcodes/`
+- Example Request: `GET /v1/one_time_passcodes/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "passcode": "1234",
+      "user": 1
+    }
+  ]
+  ```
+
+## OctoPrint Tunnels
+- Endpoint: `/v1/tunnels/`
+- Example Request: `GET /v1/tunnels/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "tunnel_id": "tunnel1",
+      "printer": 1
+    }
+  ]
+  ```
+
+## Notification Settings
+- Endpoint: `/v1/notification_settings/`
+- Example Request: `GET /v1/notification_settings/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "user": 1,
+      "settings": {
+        "email": true,
+        "sms": false
+      }
+    }
+  ]
+  ```
+
+## Printer Events
+- Endpoint: `/v1/printer_events/`
+- Example Request: `GET /v1/printer_events/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "printer": 1,
+      "event": "started"
+    }
+  ]
+  ```
+
+## First Layer Inspection Images
+- Endpoint: `/v1/first_layer_inspection_images/`
+- Example Request: `GET /v1/first_layer_inspection_images/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "image_url": "http://example.com/image1.jpg",
+      "printer": 1
+    }
+  ]
+  ```
+
+## OctoPrint Pic
+- Endpoint: `/v1/octo/pic/`
+- Example Request: `GET /v1/octo/pic/`
+- Example Response:
+  ```json
+  {
+    "pic_url": "http://example.com/pic.jpg"
+  }
+  ```
+
+## OctoPrint Ping
+- Endpoint: `/v1/octo/ping/`
+- Example Request: `GET /v1/octo/ping/`
+- Example Response:
+  ```json
+  {
+    "status": "pong"
+  }
+  ```
+
+## OctoPrint Printer
+- Endpoint: `/v1/octo/printer/`
+- Example Request: `GET /v1/octo/printer/`
+- Example Response:
+  ```json
+  {
+    "printer_status": "online"
+  }
+  ```
+
+## OctoPrint Unlinked
+- Endpoint: `/v1/octo/unlinked/`
+- Example Request: `GET /v1/octo/unlinked/`
+- Example Response:
+  ```json
+  {
+    "unlinked_printers": []
+  }
+  ```
+
+## OctoPrint Verify
+- Endpoint: `/v1/octo/verify/`
+- Example Request: `POST /v1/octo/verify/`
+  ```json
+  {
+    "code": "123456"
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "status": "verified"
+  }
+  ```
+
+## OctoPrint Printer Events
+- Endpoint: `/v1/octo/printer_events/`
+- Example Request: `GET /v1/octo/printer_events/`
+- Example Response:
+  ```json
+  [
+    {
+      "id": 1,
+      "printer": 1,
+      "event": "started"
+    }
+  ]
+  ```
+
+## Version
+### API Version
+- Endpoint: `/v1/version/`
+- Example Request: `GET /v1/version/`
+- Example Response:
+  ```json
+  {
+    "version": "1.0.0"
+  }
+  ```
