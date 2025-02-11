@@ -986,12 +986,10 @@
 # Endpoints to Focus on re Initial Setup (need to test these):
 
 ## Code Verification
-- Request: `POST /api/v1/octo/verify/?code=<code>`
-  or possibly `GET /api/v1/octo/verify/?code=<code>`
+- Request: `POST /api/v1/octo/verify/?code=<code>` or possibly `GET /api/v1/octo/verify/?code=<code>`
 
 ## OctoPrint Printer
-- Request: `PATCH /api/v1/octo/printer/`
-- Request: `GET /v1/octo/printer/`
+- Request: `PATCH /api/v1/octo/printer/` or `GET /v1/octo/printer/`
 
 ## One-Time Verification Codes
 - Request: `GET /v1/onetimeverificationcodes/`
