@@ -473,3 +473,540 @@
     "version": "1.0.0"
   }
   ```
+
+# Endpoints that accept POST requests:
+
+## Printers
+### Archive Printer
+- Endpoint: `/v1/printers/{id}/archive/`
+- Example Request: `POST /v1/printers/1/archive/`
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+### Cancel Print
+- Endpoint: `/v1/printers/{id}/cancel_print/`
+- Example Request: `POST /v1/printers/1/cancel_print/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+### Pause Print
+- Endpoint: `/v1/printers/{id}/pause_print/`
+- Example Request: `POST /v1/printers/1/pause_print/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+### Resume Print
+- Endpoint: `/v1/printers/{id}/resume_print/`
+- Example Request: `POST /v1/printers/1/resume_print/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+### Mute Current Print
+- Endpoint: `/v1/printers/{id}/mute_current_print/`
+- Example Request: `POST /v1/printers/1/mute_current_print/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+### Acknowledge Alert
+- Endpoint: `/v1/printers/{id}/acknowledge_alert/`
+- Example Request: `POST /v1/printers/1/acknowledge_alert/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+## Prints
+### Bulk Delete
+- Endpoint: `/v1/prints/bulk_delete/`
+- Example Request: `POST /v1/prints/bulk_delete/`
+  ```json
+  {
+    "print_ids": [1, 2, 3]
+  }
+  ```
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+## GCode Folders
+### Bulk Delete
+- Endpoint: `/v1/g_code_folders/bulk_delete/`
+- Example Request: `POST /v1/g_code_folders/bulk_delete/`
+  ```json
+  {
+    "folder_ids": [1, 2, 3]
+  }
+  ```
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+### Bulk Move
+- Endpoint: `/v1/g_code_folders/bulk_move/`
+- Example Request: `POST /v1/g_code_folders/bulk_move/`
+  ```json
+  {
+    "folder_ids": [1, 2, 3],
+    "parent_folder": 4
+  }
+  ```
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+## GCode Files
+### Bulk Delete
+- Endpoint: `/v1/g_code_files/bulk_delete/`
+- Example Request: `POST /v1/g_code_files/bulk_delete/`
+  ```json
+  {
+    "file_ids": [1, 2, 3]
+  }
+  ```
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+### Bulk Move
+- Endpoint: `/v1/g_code_files/bulk_move/`
+- Example Request: `POST /v1/g_code_files/bulk_move/`
+  ```json
+  {
+    "file_ids": [1, 2, 3],
+    "parent_folder": 4
+  }
+  ```
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+### Create GCode File
+- Endpoint: `/v1/g_code_files/`
+- Example Request: `POST /v1/g_code_files/`
+  ```json
+  {
+    "filename": "file1.gcode",
+    "parent_folder": 1
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "id": 1,
+    "filename": "file1.gcode",
+    "parent_folder": 1
+  }
+  ```
+
+## OctoPrint Tunnel
+### Create OctoPrint Tunnel
+- Endpoint: `/v1/tunnels/`
+- Example Request: `POST /v1/tunnels/`
+  ```json
+  {
+    "target_printer_id": 1,
+    "app_name": "AppName"
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "tunnel_endpoint": "http://example.com/tunnel"
+  }
+  ```
+
+## Mobile Devices
+### Register Mobile Device
+- Endpoint: `/v1/mobile_devices/`
+- Example Request: `POST /v1/mobile_devices/`
+  ```json
+  {
+    "device_token": "token",
+    "app_version": "1.0.0"
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "id": 1,
+    "device_token": "token",
+    "app_version": "1.0.0"
+  }
+  ```
+
+## Shared Resources
+### Create Shared Resource
+- Endpoint: `/v1/sharedresources/`
+- Example Request: `POST /v1/sharedresources/`
+  ```json
+  {
+    "printer_id": 1
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "id": 1,
+    "printer": 1,
+    "share_token": "token"
+  }
+  ```
+
+## One-Time Passcodes
+### Verify One-Time Passcode
+- Endpoint: `/v1/one_time_passcodes/`
+- Example Request: `POST /v1/one_time_passcodes/`
+  ```json
+  {
+    "verification_code": "123456",
+    "one_time_passcode": "passcode"
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "detail": "OK"
+  }
+  ```
+
+## Printer Discovery
+### Verify Device Code
+- Endpoint: `/v1/printer_discovery/`
+- Example Request: `POST /v1/printer_discovery/`
+  ```json
+  {
+    "code": "123456",
+    "device_id": "device1",
+    "device_secret": "secret"
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "queued": true
+  }
+  ```
+
+## Notification Settings
+### Send Test Message
+- Endpoint: `/v1/notification_settings/{id}/send_test_message/`
+- Example Request: `POST /v1/notification_settings/1/send_test_message/`
+- Example Response:
+  ```json
+  {
+    "status": "sent"
+  }
+  ```
+
+# Endpoints that accept other Requets (PUT, DELETE, ETC.)
+
+## GCode Files
+### Create GCode File
+- Endpoint: `/v1/g_code_files/`
+- Request Type: POST
+- Example Request:
+  ```json
+  {
+    "filename": "file1.gcode",
+    "parent_folder": 1
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "id": 1,
+    "filename": "file1.gcode",
+    "parent_folder": 1
+  }
+  ```
+
+### Delete GCode File
+- Endpoint: `/v1/g_code_files/{id}/`
+- Request Type: DELETE
+- Example Request: `DELETE /v1/g_code_files/1/`
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+## GCode Folders
+### Bulk Delete
+- Endpoint: `/v1/g_code_folders/bulk_delete/`
+- Request Type: POST
+- Example Request:
+  ```json
+  {
+    "folder_ids": [1, 2, 3]
+  }
+  ```
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+## Prints
+### Bulk Delete
+- Endpoint: `/v1/prints/bulk_delete/`
+- Request Type: POST
+- Example Request:
+  ```json
+  {
+    "print_ids": [1, 2, 3]
+  }
+  ```
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+## Printers
+### Archive Printer
+- Endpoint: `/v1/printers/{id}/archive/`
+- Request Type: POST
+- Example Request: `POST /v1/printers/1/archive/`
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+### Cancel Print
+- Endpoint: `/v1/printers/{id}/cancel_print/`
+- Request Type: POST
+- Example Request: `POST /v1/printers/1/cancel_print/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+### Pause Print
+- Endpoint: `/v1/printers/{id}/pause_print/`
+- Request Type: POST
+- Example Request: `POST /v1/printers/1/pause_print/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+### Resume Print
+- Endpoint: `/v1/printers/{id}/resume_print/`
+- Request Type: POST
+- Example Request: `POST /v1/printers/1/resume_print/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+### Mute Current Print
+- Endpoint: `/v1/printers/{id}/mute_current_print/`
+- Request Type: POST
+- Example Request: `POST /v1/printers/1/mute_current_print/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+### Acknowledge Alert
+- Endpoint: `/v1/printers/{id}/acknowledge_alert/`
+- Request Type: POST
+- Example Request: `POST /v1/printers/1/acknowledge_alert/`
+- Example Response:
+  ```json
+  {
+    "succeeded": true,
+    "printer": { ... }
+  }
+  ```
+
+## OctoPrint Tunnel
+### Create OctoPrint Tunnel
+- Endpoint: `/v1/tunnels/`
+- Request Type: POST
+- Example Request:
+  ```json
+  {
+    "target_printer_id": 1,
+    "app_name": "AppName"
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "tunnel_endpoint": "http://example.com/tunnel"
+  }
+  ```
+
+### Delete OctoPrint Tunnel
+- Endpoint: `/v1/tunnels/{id}/`
+- Request Type: DELETE
+- Example Request: `DELETE /v1/tunnels/1/`
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+## Shared Resources
+### Create Shared Resource
+- Endpoint: `/v1/sharedresources/`
+- Request Type: POST
+- Example Request:
+  ```json
+  {
+    "printer_id": 1
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "id": 1,
+    "printer": 1,
+    "share_token": "token"
+  }
+  ```
+
+### Delete Shared Resource
+- Endpoint: `/v1/sharedresources/{id}/`
+- Request Type: DELETE
+- Example Request: `DELETE /v1/sharedresources/1/`
+- Example Response:
+  ```
+  Status: 204 No Content
+  ```
+
+## Mobile Devices
+### Register Mobile Device
+- Endpoint: `/v1/mobile_devices/`
+- Request Type: POST
+- Example Request:
+  ```json
+  {
+    "device_token": "token",
+    "app_version": "1.0.0"
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "id": 1,
+    "device_token": "token",
+    "app_version": "1.0.0"
+  }
+  ```
+
+## One-Time Passcodes
+### Verify One-Time Passcode
+- Endpoint: `/v1/one_time_passcodes/`
+- Request Type: POST
+- Example Request:
+  ```json
+  {
+    "verification_code": "123456",
+    "one_time_passcode": "passcode"
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "detail": "OK"
+  }
+  ```
+
+## Printer Discovery
+### Verify Device Code
+- Endpoint: `/v1/printer_discovery/`
+- Request Type: POST
+- Example Request:
+  ```json
+  {
+    "code": "123456",
+    "device_id": "device1",
+    "device_secret": "secret"
+  }
+  ```
+- Example Response:
+  ```json
+  {
+    "queued": true
+  }
+  ```
+
+## Notification Settings
+### Send Test Message
+- Endpoint: `/v1/notification_settings/{id}/send_test_message/`
+- Request Type: POST
+- Example Request: `POST /v1/notification_settings/1/send_test_message/`
+- Example Response:
+  ```json
+  {
+    "status": "sent"
+  }
+  ```
+
+# Endpoints to Focus on re Initial Setup (need to test these):
+
+## Code Verification
+- Request: `POST /api/v1/octo/verify/?code=<code>`
+  or possibly `GET /api/v1/octo/verify/?code=<code>`
+
+## OctoPrint Printer
+- Request: `PATCH /api/v1/octo/printer/`
+- Request: `GET /v1/octo/printer/`
+
+## One-Time Verification Codes
+- Request: `GET /v1/onetimeverificationcodes/`
+
+## Shared Resources
+- Request: `GET /v1/sharedresources/`
+
+## Printer Discovery
+- Request: `GET /v1/printer_discovery/` or `POST /v1/printer_discovery/`
+
+## One-Time Passcodes
+- Example Request: `GET /v1/one_time_passcodes/` or `POST /v1/one_time_passcodes/`
+
+## OctoPrint Ping
+- Example Request: `GET /v1/octo/ping/`
+
+## Acknowledge Alert
+- Request: `/v1/printers/{id}/acknowledge_alert/` -- Example: `POST /v1/printers/1/acknowledge_alert/`
