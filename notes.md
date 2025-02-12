@@ -1008,3 +1008,48 @@
 
 ## Acknowledge Alert
 - Request: `/v1/printers/{id}/acknowledge_alert/` -- Example: `POST /v1/printers/1/acknowledge_alert/`
+
+# Working Calls So Far
+
+## Authorization Header
+- `Authorization: Token <auth_token>`
+
+## Get Printer
+- `GET http://192.168.1.133:3334/api/v1/octo/printer/`
+- Response:
+  ```
+  {
+    "user": {
+      "is_pro": true
+    },
+    "printer": {
+      "is_pro": true,
+      "id": 11,
+      "name": "My Awesome Cloud Printer",
+      "retract_on_pause": 6.5
+    }
+  }
+  ```
+
+## Post Printer Event
+- See https://www.obico.io/docs/api/api-objects/#printerevent
+- See https://www.obico.io/docs/api/printer-event/
+- ` POST http://192.168.1.133:3334/api/v1/octo/printer_events/`
+- Body:
+  ```
+  {
+    "event_type": "STARTED",
+    "event_class": "INFO",
+    "event_title": "Started Print",
+    "event_text": "The event started"
+  }
+  ```
+- Reponse:
+  ```
+  {
+  "result": "ok"
+  }
+
+  # Websocket
+
+  It seems that establishing a Websoocket is important after auth_token is recieved.
