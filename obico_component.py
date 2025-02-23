@@ -7,6 +7,7 @@ import time
 import bson  # Import bson for binary serialization
 import inspect  # Import inspect for inspecting function arguments
 import asyncio  # Import asyncio for non-blocking sleep
+from .const import POST_STATUS_INTERVAL_SECONDS  # Import the constant
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,6 +89,7 @@ class ObicoComponent:
         _LOGGER.debug("Setting up ObicoComponent")
         if self.auth_token and self.endpoint_prefix:
             self.establish_ws_connection()
+            self.schedule_periodic_status_update()
 
     def establish_ws_connection(self):
         ws_url = f"{self.endpoint_prefix.replace('http', 'ws')}/ws/dev/"
@@ -132,3 +134,11 @@ class ObicoComponent:
     def status(self):
         # Implement your status retrieval logic here
         return {"status": "ok"}
+
+    def schedule_periodic_status_update(self):
+        async def periodic_status_update():
+            while True:
+                await asyncio.sleep(POST_STATUS_INTERVAL_SECONDS)
+                self.post_update_to_server()
+
+        asyncio.create_task(periodic_status_update())
