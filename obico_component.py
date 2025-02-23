@@ -132,8 +132,166 @@ class ObicoComponent:
         self.ws_client.send(raw, as_binary=as_binary)
 
     def status(self):
-        # Implement your status retrieval logic here
-        return {"status": "ok"}
+        # *** Replace this with actual data ***
+        return {
+            "current_print_ts": -1,  # int(time.time()),
+            "event": {
+                "event_type": "ENDED",
+                    # STARTED: Print job started.
+                    # ENDED: Print job ended.
+                    # PAUSED: Print job paused.
+                    # RESUMED: Print job resumed.
+                    # FAILURE_ALERTED: Possible failure detected.
+                    # ALERT_MUTED: Alerts have been muted.
+                    # ALERT_UNMUTED: Alerts have been unmuted.
+                    # FILAMENT_CHANGE: Filament change required.
+                    # PRINTER_ERROR: Printer error occurred.
+            },
+            "settings": {
+                "webcams": [
+                    {
+                        "name": "Dummy Camera",
+                        "is_primary_camera": True,
+                        "stream_mode": "live",
+                        "stream_id": 1,
+                        "flipV": False,
+                        "flipH": False,
+                        "rotation": 0,
+                        "streamRatio": "16:9"
+                    }
+                ],
+                "temperature": {
+                    "profiles": [
+                        {"bed": 60, "chamber": None, "extruder": 200, "name": "PLA"},
+                        {"bed": 100, "chamber": None, "extruder": 240, "name": "ABS"}
+                    ]
+                },
+                "agent": {
+                    "name": "octoprint_obico",
+                    "version": "2.5.2"
+                }
+            },
+            "status": {
+                "_ts": int(time.time()),
+                "state": {
+                    "text": "Operational", # or "Offline"... etc
+                    "flags": {
+                        "operational": True,
+                        "printing": False, # true if the printer is currently printing, false otherwise
+                        "cancelling": False, # true if the printer is currently printing and in the process of pausing, false otherwise
+                        "pausing": False, # true if the printer is currently printing and in the process of pausing, false otherwise
+                        "resuming": False,
+                        "finishing": False,
+                        "closedOrError": False, # true if the printer is disconnected (possibly due to an error), false otherwise
+                        "error": False, # true if an unrecoverable error occurred, false otherwise
+                        "paused": False, # true if the printer is currently paused, false otherwise
+                        "ready": True, # true if the printer is operational and no data is currently being streamed to SD, so ready to receive instructions
+                        "sdReady": True # true if the printer’s SD card is available and initialized, false otherwise. This is redundant information to the SD State.
+                    },
+                    "error": ""
+                },
+                "job": {
+                    "file": {
+                        "name": "example.gcode",
+                        "path": "/path/to/example.gcode",
+                        "display": "Example GCode",
+                        "origin": "local",
+                        "size": 123456,
+                        "date": "2025-01-01T23:00:10.000000Z"
+                    },
+                    "estimatedPrintTime": 3600,
+                    "averagePrintTime": 3500,
+                    "lastPrintTime": 3400,
+                    "filament": {
+                        "tool0": {
+                            "length": 1000,
+                            "volume": 10
+                        }
+                    },
+                    "user": "User Name",
+                },
+                "currentLayerHeight": 0.2,
+                "currentZ": 5.0,
+                "currentFeedRate": 100,
+                "currentFlowRate": 100,
+                "currentFanSpeed": 100,
+                "progress": {
+                    "completion": 50,
+                    "filepos": 123456,
+                    "printTime": 1800,
+                    "printTimeLeft": 1800,
+                    "printTimeLeftOrigin": "estimate"
+                },
+                "temperatures": {
+                    "tool0": {
+                        "actual": 200,
+                        "target": 200,
+                        "offset": 0
+                    },
+                    "bed": {
+                        "actual": 60,
+                        "target": 60,
+                        "offset": 0
+                    },
+                    "chamber": {
+                        "actual": None,
+                        "target": None,
+                        "offset": 0
+                    }
+                },
+                "file_metadata": {
+                    "hash": "abc123",
+                    "obico": {
+                        "totalLayerCount": 100
+                    },
+                    "analysis": {
+                        "printingArea": {
+                            "maxX": 200,
+                            "maxY": 200,
+                            "maxZ": 200,
+                            "minX": 0,
+                            "minY": 0,
+                            "minZ": 0
+                        },
+                        "dimensions": {
+                            "depth": 200,
+                            "height": 200,
+                            "width": 200
+                        },
+                        "travelArea": {
+                            "maxX": 200,
+                            "maxY": 200,
+                            "maxZ": 200,
+                            "minX": 0,
+                            "minY": 0,
+                            "minZ": 0
+                        },
+                        "travelDimensions": {
+                            "depth": 200,
+                            "height": 200,
+                            "width": 200
+                        },
+                        "estimatedPrintTime": 3600,
+                        "filament": {
+                            "tool0": {
+                                "length": 1000,
+                                "volume": 10
+                            }
+                        }
+                    },
+                    "history": {
+                        "timestamp": "2025-02-22T23:05:10.652919Z",
+                        "printTime": 3600,
+                        "success": True,
+                        "printerProfile": "default"
+                    },
+                    "statistics": {
+                        "averagePrintTime": 3500,
+                        "lastPrintTime": 3400
+                    }
+                }
+            }
+        }
 
     def schedule_periodic_status_update(self):
         async def periodic_status_update():
