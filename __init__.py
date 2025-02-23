@@ -86,7 +86,8 @@ async def async_setup_entry(hass, entry):
                     "name": name,
                     "status": "online"
                 }
-                async with session.post(f"{endpoint_prefix}/api/v1/octo/printer/", headers=headers, json=payload) as response:
+                # async with session.post(f"{endpoint_prefix}/api/v1/octo/printer/", headers=headers, json=payload) as response:
+                async with session.get(f"{endpoint_prefix}/api/v1/octo/printer/", headers=headers) as response:
                     response_text = await response.text()
                     _LOGGER.debug(f"Response status: {response.status}")
                     _LOGGER.debug(f"Response text: {response_text}")
