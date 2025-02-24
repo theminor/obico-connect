@@ -27,10 +27,16 @@ class JpegPoster:
         if url is None:
             raise Exception(f"Camera entity {self.camera_entity_id} does not have an entity_picture attribute")
 
-        _logger.warning(f"Capturing JPEG from URL: {url}")
+        # Prepend the base URL of your Home Assistant instance
+        base_url = self.hass.config.internal_url or self.hass.config.external_url
+        if not base_url:
+            raise Exception("Base URL for Home Assistant is not set")
+        full_url = f"{base_url}{url}"
+
+        _logger.warning(f"Capturing JPEG from URL: {full_url}")
 
         session = async_get_clientsession(self.hass)
-        async with session.get(url) as response:
+        async with session.get(full_url) as response:
             _logger.warning(f"Response status: {response.status}")
             if response.status != 200:
                 _logger.error(f"Failed to capture jpeg - HTTP status code: {response.status}")

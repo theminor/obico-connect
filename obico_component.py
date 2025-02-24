@@ -90,6 +90,12 @@ class ObicoComponent:
         self.config_entry = config_entry
         self.schedule_periodic_status_update()
 
+    def auth_headers(self):
+        return {
+            "Authorization": f"Token {self.auth_token}",
+            "Content-Type": "application/json"
+        }
+
     def is_configured(self):
         return self.auth_token is not None and self.endpoint_prefix is not None
 
