@@ -47,7 +47,9 @@ async def async_setup_entry(hass, entry):
 
     _LOGGER.debug(f"Configuration loaded from entry: {hass.data[DOMAIN][entry.entry_id]}")
 
-    obico_component = ObicoComponent(hass, hass.data[DOMAIN][entry.entry_id])  # Initialize ObicoComponent
+    # obico_component = ObicoComponent(hass, hass.data[DOMAIN][entry.entry_id])  # Initialize ObicoComponent
+    obico_component = ObicoComponent(hass, entry)  # Initialize ObicoComponent
+    hass.data[DOMAIN][entry.entry_id] = obico_component  # Store ObicoComponent instance in data
     obico_component.setup()  # Call setup to establish WebSocket connection and send initial status update
 
     async def post_printer_status(now):
@@ -65,14 +67,6 @@ async def async_setup_entry(hass, entry):
                         "progress": 50  # Example progress value
                     }
                 }
-                #async with session.post(f"{endpoint_prefix}/api/v1/octo/printer_status/", headers=headers, json=payload) as response:
-                #    response_text = await response.text()
-                #    _LOGGER.debug(f"Response status: {response.status}")
-                #    _LOGGER.debug(f"Response text: {response_text}")
-                #    if response.status != 200:
-                #        _LOGGER.error(f"Failed to post printer status: {response.status} - {response_text}")
-                #    else:
-                #        _LOGGER.debug(f"Successfully posted printer status: {response.status} - {response_text}")
         except Exception as e:
             _LOGGER.error(f"Error posting printer status: {e}")
 

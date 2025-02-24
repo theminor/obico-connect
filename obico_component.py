@@ -8,6 +8,7 @@ import bson  # Import bson for binary serialization
 import inspect  # Import inspect for inspecting function arguments
 import asyncio  # Import asyncio for non-blocking sleep
 from .const import POST_STATUS_INTERVAL_SECONDS  # Import the constant
+from .jpeg_poster import JpegPoster  # Import JpegPoster
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -81,15 +82,23 @@ class WebSocketConnectionException(Exception):
 class ObicoComponent:
     def __init__(self, hass, config_entry):
         self.hass = hass
-        self.auth_token = config_entry["auth_token"]
-        self.endpoint_prefix = config_entry["endpoint_prefix"]
+        self.auth_token = config_entry.data["auth_token"]
+        self.endpoint_prefix = config_entry.data["endpoint_prefix"]
+        self.camera_entity_id = config_entry.data["camera_entity_id"]
         self.ws_client = None
+        self.jpeg_poster = JpegPoster(hass, self.camera_entity_id, self)
+        self.config_entry = config_entry
+        self.schedule_periodic_status_update()
+
+    def is_configured(self):
+        return self.auth_token is not None and self.endpoint_prefix is not None
 
     def setup(self):
         _LOGGER.debug("Setting up ObicoComponent")
-        if self.auth_token and self.endpoint_prefix:
+        if self.is_configured():
             self.establish_ws_connection()
             self.schedule_periodic_status_update()
+            asyncio.create_task(self.jpeg_poster.pic_post_loop())
 
     def establish_ws_connection(self):
         ws_url = f"{self.endpoint_prefix.replace('http', 'ws')}/ws/dev/"
