@@ -92,8 +92,7 @@ class ObicoComponent:
 
     def auth_headers(self):
         return {
-            "Authorization": f"Token {self.auth_token}",
-            "Content-Type": "application/json"
+            "Authorization": f"Token {self.auth_token}"
         }
 
     def is_configured(self):

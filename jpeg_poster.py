@@ -6,8 +6,8 @@ import backoff
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .utils import server_request
 from .lib.error_stats import error_stats
+from .const import POST_PIC_INTERVAL_SECONDS
 
-POST_PIC_INTERVAL_SECONDS = 10.0
 
 _logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class JpegPoster:
             jpeg_data = await self.capture_jpeg()
             data = aiohttp.FormData()
             data.add_field('pic', jpeg_data, filename='image.jpg', content_type='image/jpeg')
-            data.add_field('viewing_boost', 'true')  # or remove this line?
+            data.add_field('viewing_boost', 'true') # optional?
         except Exception as e:
             error_stats.add_connection_error('webcam', self.plugin)
             _logger.error(f'Failed to capture jpeg - {e}')
@@ -61,14 +61,17 @@ class JpegPoster:
 
         try:
             async with aiohttp.ClientSession() as session:
+                headers = self.plugin.auth_headers()
                 async with session.post(
                     f"{self.plugin.endpoint_prefix}/api/v1/octo/pic/",
                     data=data,
-                    headers=self.plugin.auth_headers(),
+                    headers=headers,
                     timeout=aiohttp.ClientTimeout(total=60)
                 ) as resp:
                     _logger.warning(f'Jpeg posted to server - {resp.status}')
                     resp.raise_for_status()
+        except aiohttp.ClientResponseError as e:
+            _logger.error(f'Failed to post jpeg to server - {e.status}, message={e.message}, url={e.request_info.url}, error={e}')
         except Exception as e:
             _logger.error(f'Failed to post jpeg to server - {e}')
 
