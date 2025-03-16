@@ -1,7 +1,7 @@
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.helpers import entity_registry
+from homeassistant.helpers.selector import selector
 from .const import DOMAIN, CONF_AUTH_TOKEN, CONF_ENDPOINT_PREFIX, DEFAULT_NAME
 import aiohttp
 import logging
@@ -16,51 +16,48 @@ class ObicoConnectConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         if user_input is not None:
             self.endpoint_prefix = user_input[CONF_ENDPOINT_PREFIX]
+            self.device_type = user_input["device_type"]
             self.auth_token = None
-            return await self.async_step_verification_code()
+            return await self.async_step_verification_and_camera()
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CONF_ENDPOINT_PREFIX, default="https://app.obico.io"): str,
+                    vol.Required(CONF_ENDPOINT_PREFIX, default="https://app.obico.io", description="Enter the URL to the Obico Server (including port, if applicable)"): str,
+                    vol.Required("device_type", description="Select the type of Printer you will connect from Home Assistant"): vol.In(["Bambu Lab", "Moonraker"]),
                 }
             ),
         )
 
-    async def async_step_verification_code(self, user_input=None):
+    async def async_step_verification_and_camera(self, user_input=None):
         if user_input is not None:
             verification_code = user_input["verification_code"]
             self.auth_token = await self.verify_code(verification_code)
             if self.auth_token:
-                return await self.async_step_select_camera()
-
-        return self.async_show_form(
-            step_id="verification_code",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("verification_code"): str,
-                }
-            ),
-        )
-
-    async def async_step_select_camera(self, user_input=None):
-        if user_input is not None:
-            camera_entity_id = user_input["camera_entity_id"]
-            return self.async_create_entry(title=DEFAULT_NAME, data={
-                CONF_AUTH_TOKEN: self.auth_token,
-                CONF_ENDPOINT_PREFIX: self.endpoint_prefix,
-                "camera_entity_id": camera_entity_id
-            })
+                camera_entity_id = user_input["camera_entity_id"]
+                update_interval = user_input.get("update_interval", 5)
+                printer_device_id = user_input["printer_device_id"]
+                return self.async_create_entry(title=DEFAULT_NAME, data={
+                    CONF_AUTH_TOKEN: self.auth_token,
+                    CONF_ENDPOINT_PREFIX: self.endpoint_prefix,
+                    "camera_entity_id": camera_entity_id,
+                    "update_interval": update_interval,
+                    "printer_device_id": printer_device_id
+                })
 
         registry = async_get_entity_registry.async_get(self.hass)
         camera_entities = [entity.entity_id for entity in registry.entities.values() if entity.domain == "camera"]
+        integration_type = "bambu_lab" if self.device_type == "Bambu Lab" else "moonraker"
 
         return self.async_show_form(
-            step_id="select_camera",
+            step_id="verification_and_camera",
             data_schema=vol.Schema(
                 {
-                    vol.Required("camera_entity_id"): vol.In(camera_entities),
+                    vol.Required("verification_code", description="Enter the verification code provided by the Obico Server"): str,
+                    vol.Required("printer_device_id", description="Select the printer device to monitor"): selector({"device": {"integration": integration_type}}),
+                    vol.Required("camera_entity_id", description="Select the camera entity to use"): vol.In(camera_entities),
+                    vol.Optional("update_interval", default=5, description="Enter the update interval (in seconds)"): vol.All(vol.Coerce(int), vol.Range(min=1, max=300)),
                 }
             ),
         )
