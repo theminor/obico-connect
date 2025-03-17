@@ -4,6 +4,7 @@ import requests
 import websocket
 import threading
 import time
+import datetime
 import bson  # Import bson for binary serialization
 import inspect  # Import inspect for inspecting function arguments
 import asyncio  # Import asyncio for non-blocking sleep
@@ -153,7 +154,11 @@ class ObicoComponent:
         try:
             data["nozzle_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_extruder_temperature").state
             data["bed_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_temperature").state
-            data["print_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_progress").state
+            data["percent_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_progress").state   # Bambu sends: "failed", "finish", "idle", "init", "offline", "pause", "prepare", "running", "slicing", "unknown" --> Obico wants: STARTED, ENDED, PAUSED, RESUMED, FAILURE_ALERTED, ALERT_MUTED, ALERT_UNMUTED, FILAMENT_CHANGE, PRINTER_ERROR
+
+
+
+
             data["print_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_duration").state
             data["print_time_left"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_eta").state
             data["current_layer"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_layer").state
@@ -173,26 +178,58 @@ class ObicoComponent:
         # Fetch data from Bambu Lab component
         data = {}
         try:
-            data["nozzle_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_temperature").state
-            data["bed_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_temperature").state
-            data["print_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_progress").state
-            data["print_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_time").state
-            data["print_time_left"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_time_left").state
-            data["current_layer"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_layer").state
-            data["total_layers"] = self.hass.states.get(f"sensor.{self.printer_device_id}_total_layers").state
-            data["active_tray"] = self.hass.states.get(f"sensor.{self.printer_device_id}_active_tray").state
-            data["bed_target_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_target_temperature").state
-            data["cooling_fan_speed"] = self.hass.states.get(f"sensor.{self.printer_device_id}_cooling_fan_speed").state
+            data["percent_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_progress").state
             data["current_stage"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_stage").state
-            data["end_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_end_time").state
             data["gcode_filename"] = self.hass.states.get(f"sensor.{self.printer_device_id}_gcode_filename").state
-            data["heatbreak_fan_speed"] = self.hass.states.get(f"sensor.{self.printer_device_id}_heatbreak_fan_speed").state
-            data["nozzle_size"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_size").state
+
+            bambu_status = self.hass.states.get(f"sensor.{self.printer_device_id}_print_status").state.lower()  # Bambu sends: "failed", "finish", "idle", "init", "offline", "pause", "prepare", "running", "slicing", "unknown" --> Obico wants: STARTED, ENDED, PAUSED, RESUMED, FAILURE_ALERTED, ALERT_MUTED, ALERT_UNMUTED, FILAMENT_CHANGE, PRINTER_ERROR
+            status_mapping = {
+                "running": "STARTED",
+                "idle": "ENDED",
+                "failed": "FAILURE_ALERTED",
+                "pause": "PAUSED",
+                "prepare": "STARTED",
+                "finish": "ENDED",
+                "init": "STARTED",
+                "offline": "PRINTER_ERROR",
+                "slicing": "STARTED",
+                "unknown": "PRINTER_ERROR"
+            }
+            data["print_status"] = status_mapping.get(bambu_status, "PRINTER_ERROR")
+            data["operational"] = bambu_status not in ["offline", "unknown"]
+            data["printing"] = bambu_status in ["running", "prepare", "slicing"]
+            data["pausing"] = bambu_status == "pause"  # might need to find a better way to determine this
+            data["resuming"] = bambu_status == "running"  # might need to find a better way to determine this
+            data["finishing"] = bambu_status == "finish"  # might need to find a better way to determine this
+            data["closedOrError"] = bambu_status in ["failed", "offline", "unknown"]
+            data["error"] = bambu_status == "failed"
+            data["paused"] = bambu_status == "pause"
+            data["ready"] = bambu_status in ["idle", "finish", "init", "slicing"]
+            data["sdReady"] = bambu_status not in ["offline", "unknown"]  # might need to find a better way to determine this
+            if bambu_status == "failed": data["error"] = "Failed" elif bambu_status == "offline" data["error"] = "Offline" elif bambu_status == "unknown" data["error"] = "Unknown" else data["error"] = ""  # might need to find a better way to determine this
+            data["start_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_start_time").state  # time stamp
+            data["end_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_end_time").state  # time stamp
+            data["remaining_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_remaining_time").state  # minutes
+            try:
+                start_time = datetime.datetime.strptime(data["start_time"], "%Y-%m-%d %H:%M:%S")
+                end_time = datetime.datetime.strptime(data["end_time"], "%Y-%m-%d %H:%M:%S")
+                total_print_time = end_time - start_time
+                data["total_print_time"] = total_print_time
+            except Exception as e:
+                _LOGGER.warning(f"Error calculating total print time: {e}")
+                data["total_print_time"] = "Unknown"
+            data["cooling_fan_speed"] = self.hass.states.get(f"sensor.{self.printer_device_id}_cooling_fan_speed").state
+            data["percent_print_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_progress").state
+            data["nozzle_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_temperature").state
             data["nozzle_target_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_target_temperature").state
-            data["print_status"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_status").state
-            data["remaining_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_remaining_time").state
-            data["start_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_start_time").state
-            data["ip_address"] = self.hass.states.get(f"sensor.{self.printer_device_id}_ip_address").state
+            data["bed_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_temperature").state
+            data["bed_target_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_target_temperature").state
+            #data["current_layer"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_layer").state
+            #data["total_layers"] = self.hass.states.get(f"sensor.{self.printer_device_id}_total_layers").state
+            #data["active_tray"] = self.hass.states.get(f"sensor.{self.printer_device_id}_active_tray").state
+            #data["heatbreak_fan_speed"] = self.hass.states.get(f"sensor.{self.printer_device_id}_heatbreak_fan_speed").state
+            #data["nozzle_size"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_size").state
+            #data["ip_address"] = self.hass.states.get(f"sensor.{self.printer_device_id}_ip_address").state
         except Exception as e:
             _LOGGER.warning(f"Error fetching Bambu Lab data: {e}")
         return data
@@ -206,98 +243,89 @@ class ObicoComponent:
             data = {}
 
         return {
-            "current_print_ts": int(time.time()),  # int(time.time()),
-            "event": {
-                "event_type": "STARTED" if data.get("print_progress") and float(data["print_progress"]) > 0 else "ENDED",
-                    # STARTED: Print job started.
-                    # ENDED: Print job ended.
-                    # PAUSED: Print job paused.
-                    # RESUMED: Print job resumed.
-                    # FAILURE_ALERTED: Possible failure detected.
-                    # ALERT_MUTED: Alerts have been muted.
-                    # ALERT_UNMUTED: Alerts have been unmuted.
-                    # FILAMENT_CHANGE: Filament change required.
-                    # PRINTER_ERROR: Printer error occurred.
-            },
-            "settings": {
-                "webcams": [
-                    {
-                        "name": "Dummy Camera",
-                        "is_primary_camera": True,
-                        "stream_mode": "live",
-                        "stream_id": 1,
-                        "flipV": False,
-                        "flipH": False,
-                        "rotation": 0,
-                        "streamRatio": "16:9"
-                    }
-                ],
-                "temperature": {
-                    "profiles": [
-                        {"bed": 60, "chamber": None, "extruder": 200, "name": "PLA"},
-                        {"bed": 100, "chamber": None, "extruder": 240, "name": "ABS"}
-                    ]
-                },
-                "agent": {
-                    "name": "octoprint_obico",
-                    "version": "2.5.2"
-                }
-            },
+            "current_print_ts": int(time.time()),
+            #"event": {
+            #    "event_type": data.get("print_progress", "PRINTER_ERROR"),  # STARTED, ENDED, PAUSED, RESUMED, FAILURE_ALERTED, ALERT_MUTED, ALERT_UNMUTED, FILAMENT_CHANGE, PRINTER_ERROR
+            #},
+            #"settings": {
+            #    "webcams": [
+            #        {
+            #            "name": "Dummy Camera",
+            #            "is_primary_camera": True,
+            #            "stream_mode": "live",
+            #            "stream_id": 1,
+            #            "flipV": False,
+            #            "flipH": False,
+            #            "rotation": 0,
+            #            "streamRatio": "16:9"
+            #        }
+            #    ],
+            #    "temperature": {
+            #        "profiles": [
+            #            {"bed": 60, "chamber": None, "extruder": 200, "name": "PLA"},
+            #            {"bed": 100, "chamber": None, "extruder": 240, "name": "ABS"}
+            #        ]
+            #    },
+            #    "agent": {
+            #        "name": "octoprint_obico",
+            #        "version": "2.5.2"
+            #    }
+            #},
             "status": {
                 "_ts": int(time.time()),
                 "state": {
-                    "text": "Operational" if data.get("print_progress") and float(data["print_progress"]) > 0 else "Offline",  # or "Offline"... etc
+                    "text": data.get("current_stage", "Unknown"),  # or "Offline"... etc
                     "flags": {
-                        "operational": True,
-                        "printing": float(data.get("print_progress", 0)) > 0,  # true if the printer is currently printing, false otherwise
-                        "cancelling": False,  # true if the printer is currently printing and in the process of pausing, false otherwise
-                        "pausing": False,  # true if the printer is currently printing and in the process of pausing, false otherwise
-                        "resuming": False,
-                        "finishing": False,
-                        "closedOrError": False,  # true if the printer is disconnected (possibly due to an error), false otherwise
-                        "error": False,  # true if an unrecoverable error occurred, false otherwise
-                        "paused": False,  # true if the printer is currently paused, false otherwise
-                        "ready": True,  # true if the printer is operational and no data is currently being streamed to SD, so ready to receive instructions
-                        "sdReady": True  # true if the printer’s SD card is available and initialized, false otherwise. This is redundant information to the SD State.
+                        "operational": data.get("operational", False),  # true if the printer is operational, false otherwise
+                        "printing": data.get("printing", False),   # true if the printer is currently printing, false otherwise
+                        "cancelling": data.get("cancelling", False),  # true if the printer is currently printing and in the process of pausing, false otherwise
+                        "pausing": data.get("pausing", False),  # true if the printer is currently printing and in the process of pausing, false otherwise
+                        "resuming": data.get("resuming", False),
+                        "finishing": data.get("finishing", False),
+                        "closedOrError": data.get("closedOrError", False),  # true if the printer is disconnected (possibly due to an error), false otherwise
+                        "error": data.get("error", False),  # true if an unrecoverable error occurred, false otherwise
+                        "paused": data.get("paused", False),  # true if the printer is currently paused, false otherwise
+                        "ready": data.get("ready", False),  # true if the printer is operational and no data is currently being streamed to SD, so ready to receive instructions
+                        "sdReady": data.get("sdReady", False)  # true if the printer’s SD card is available and initialized, false otherwise. This is redundant information to the SD State.
                     },
-                    "error": data.get("print_status", "")
+                    "error": data.get("error", "")
                 },
                 "job": {
                     "file": {
-                        "name": data.get("gcode_filename", "example.gcode"),
-                        "path": "/path/to/example.gcode",
-                        "display": data.get("gcode_filename", "Example GCode"),
-                        "origin": "local",
-                        "size": 123456,
-                        "date": data.get("start_time", "2025-01-01T23:00:10.000000Z")
+                        "name": data.get("gcode_filename", "Unknown"),
+                        # "path": "/path/to/example.gcode",
+                        "display": data.get("gcode_filename", "Unknown"),
+                        # "origin": "local",
+                        # "size": 123456,
+                        "date": data.get("start_time", "")
                     },
-                    "estimatedPrintTime": int(data.get("print_time_left", 0)) + int(data.get("print_time", 0)),
-                    "averagePrintTime": 3500,
-                    "lastPrintTime": 3400,
-                    "filament": {
-                        "tool0": {
-                            "length": 1000,
-                            "volume": 10
-                        }
+                    "estimatedPrintTime": str(data.get("total_print_time", "Unknown")),
+                    #"averagePrintTime": 3500,
+                    #"lastPrintTime": 3400,
+                    #"filament": {
+                    #    "tool0": {
+                    #        "length": 1000,
+                    #        "volume": 10
+                    #    }
                     },
-                    "user": "User Name",
+                    #"user": "User Name",
                 },
-                "currentLayerHeight": 0.2,
-                "currentZ": 5.0,
-                "currentFeedRate": 100,
-                "currentFlowRate": 100,
-                "currentFanSpeed": float(data.get("cooling_fan_speed", 100)),
+                #"currentLayerHeight": 0.2,
+                #"currentZ": 5.0,
+                #"currentFeedRate": 100,
+                #"currentFlowRate": 100,
+                "currentFanSpeed": float(data.get("cooling_fan_speed", 0)),
                 "progress": {
-                    "completion": float(data.get("print_progress", 0)),
-                    "filepos": 123456,
-                    "printTime": int(data.get("print_time", 0)),
-                    "printTimeLeft": int(data.get("print_time_left", 0)),
-                    "printTimeLeftOrigin": "estimate"
+                    "completion": float(data.get("percent_print_progress", 0)),
+                    #"filepos": 123456,
+                    "printTime": str(data.get("total_print_time", "Unknown")),
+                    "printTimeLeft": int(data.get("remaining_time", 0)),
+                    #"printTimeLeftOrigin": "estimate"
                 },
                 "temperatures": {
                     "tool0": {
                         "actual": float(data.get("nozzle_temperature", 0)),
-                        "target": float(data.get("nozzle_target_temperature", 200)),
+                        "target": float(data.get("nozzle_target_temperature", 0)),
                         "offset": 0
                     },
                     "bed": {
@@ -305,63 +333,63 @@ class ObicoComponent:
                         "target": float(data.get("bed_target_temperature", 60)),
                         "offset": 0
                     },
-                    "chamber": {
-                        "actual": None,
-                        "target": None,
-                        "offset": 0
-                    }
+                    #"chamber": {
+                    #    "actual": None,
+                    #    "target": None,
+                    #    "offset": 0
+                    #}
                 },
-                "file_metadata": {
-                    "hash": "abc123",
-                    "obico": {
-                        "totalLayerCount": int(data.get("total_layers", 0))
-                    },
-                    "analysis": {
-                        "printingArea": {
-                            "maxX": 200,
-                            "maxY": 200,
-                            "maxZ": 200,
-                            "minX": 0,
-                            "minY": 0,
-                            "minZ": 0
-                        },
-                        "dimensions": {
-                            "depth": 200,
-                            "height": 200,
-                            "width": 200
-                        },
-                        "travelArea": {
-                            "maxX": 200,
-                            "maxY": 200,
-                            "maxZ": 200,
-                            "minX": 0,
-                            "minY": 0,
-                            "minZ": 0
-                        },
-                        "travelDimensions": {
-                            "depth": 200,
-                            "height": 200,
-                            "width": 200
-                        },
-                        "estimatedPrintTime": 3600,
-                        "filament": {
-                            "tool0": {
-                                "length": 1000,
-                                "volume": 10
-                            }
-                        }
-                    },
-                    "history": {
-                        "timestamp": data.get("start_time", "2025-02-22T23:05:10.652919Z"),
-                        "printTime": 3600,
-                        "success": True,
-                        "printerProfile": "default"
-                    },
-                    "statistics": {
-                        "averagePrintTime": 3500,
-                        "lastPrintTime": 3400
-                    }
-                }
+                #"file_metadata": {
+                #    "hash": "abc123",
+                #    "obico": {
+                #        "totalLayerCount": int(data.get("total_layers", 0))
+                #    },
+                #    "analysis": {
+                #        "printingArea": {
+                #            "maxX": 200,
+                #            "maxY": 200,
+                #            "maxZ": 200,
+                #            "minX": 0,
+                #            "minY": 0,
+                #            "minZ": 0
+                #        },
+                #        "dimensions": {
+                #            "depth": 200,
+                #            "height": 200,
+                #            "width": 200
+                #        },
+                #        "travelArea": {
+                #            "maxX": 200,
+                #            "maxY": 200,
+                #            "maxZ": 200,
+                #            "minX": 0,
+                #            "minY": 0,
+                #            "minZ": 0
+                #        },
+                #        "travelDimensions": {
+                #            "depth": 200,
+                #            "height": 200,
+                #            "width": 200
+                #        },
+                #        "estimatedPrintTime": 3600,
+                #        "filament": {
+                #            "tool0": {
+                #                "length": 1000,
+                #                "volume": 10
+                #            }
+                #        }
+                #   },
+                #    "history": {
+                #        "timestamp": data.get("start_time", "2025-02-22T23:05:10.652919Z"),
+                #        "printTime": 3600,
+                #        "success": True,
+                #        "printerProfile": "default"
+                #    },
+                #    "statistics": {
+                #        "averagePrintTime": 3500,
+                #        "lastPrintTime": 3400
+                #    }
+                #}
             }
         }
 
