@@ -85,6 +85,8 @@ class ObicoComponent:
         self.auth_token = config_entry.data["auth_token"]
         self.endpoint_prefix = config_entry.data["endpoint_prefix"]
         self.camera_entity_id = config_entry.data["camera_entity_id"]
+        self.printer_device_id = config_entry.data["printer_device_id"]
+        self.device_type = config_entry.data["device_type"]
         self.ws_client = None
         self.jpeg_poster = JpegPoster(hass, self.camera_entity_id, self)
         self.config_entry = config_entry
@@ -145,12 +147,68 @@ class ObicoComponent:
             raw = json.dumps(data, default=str)
         self.ws_client.send(raw, as_binary=as_binary)
 
-    def status(self):
-        # *** Replace this with actual data ***
+    async def fetch_moonraker_data(self):
+        # Fetch data from Moonraker component
+        data = {}
+        try:
+            data["nozzle_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_extruder_temperature").state
+            data["bed_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_temperature").state
+            data["print_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_progress").state
+            data["print_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_duration").state
+            data["print_time_left"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_eta").state
+            data["current_layer"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_layer").state
+            data["total_layers"] = self.hass.states.get(f"sensor.{self.printer_device_id}_total_layer").state
+            data["bed_target_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_target").state
+            data["cooling_fan_speed"] = self.hass.states.get(f"sensor.{self.printer_device_id}_fan_speed").state
+            data["current_stage"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_print_state").state
+            data["gcode_filename"] = self.hass.states.get(f"sensor.{self.printer_device_id}_filename").state
+            data["print_status"] = self.hass.states.get(f"sensor.{self.printer_device_id}_printer_state").state
+            data["remaining_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_eta").state
+            data["start_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_duration").state
+        except Exception as e:
+            _LOGGER.warning(f"Error fetching Moonraker data: {e}")
+        return data
+
+    async def fetch_bambu_lab_data(self):
+        # Fetch data from Bambu Lab component
+        data = {}
+        try:
+            data["nozzle_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_temperature").state
+            data["bed_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_temperature").state
+            data["print_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_progress").state
+            data["print_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_time").state
+            data["print_time_left"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_time_left").state
+            data["current_layer"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_layer").state
+            data["total_layers"] = self.hass.states.get(f"sensor.{self.printer_device_id}_total_layers").state
+            data["active_tray"] = self.hass.states.get(f"sensor.{self.printer_device_id}_active_tray").state
+            data["bed_target_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_target_temperature").state
+            data["cooling_fan_speed"] = self.hass.states.get(f"sensor.{self.printer_device_id}_cooling_fan_speed").state
+            data["current_stage"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_stage").state
+            data["end_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_end_time").state
+            data["gcode_filename"] = self.hass.states.get(f"sensor.{self.printer_device_id}_gcode_filename").state
+            data["heatbreak_fan_speed"] = self.hass.states.get(f"sensor.{self.printer_device_id}_heatbreak_fan_speed").state
+            data["nozzle_size"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_size").state
+            data["nozzle_target_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_target_temperature").state
+            data["print_status"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_status").state
+            data["remaining_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_remaining_time").state
+            data["start_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_start_time").state
+            data["ip_address"] = self.hass.states.get(f"sensor.{self.printer_device_id}_ip_address").state
+        except Exception as e:
+            _LOGGER.warning(f"Error fetching Bambu Lab data: {e}")
+        return data
+
+    async def status(self):
+        if self.device_type == "moonraker":
+            data = await self.fetch_moonraker_data()
+        elif self.device_type == "bambu_lab":
+            data = await self.fetch_bambu_lab_data()
+        else:
+            data = {}
+
         return {
-            "current_print_ts": -1,  # int(time.time()),
+            "current_print_ts": int(time.time()),  # int(time.time()),
             "event": {
-                "event_type": "ENDED",
+                "event_type": "STARTED" if data.get("print_progress") and float(data["print_progress"]) > 0 else "ENDED",
                     # STARTED: Print job started.
                     # ENDED: Print job ended.
                     # PAUSED: Print job paused.
@@ -188,32 +246,32 @@ class ObicoComponent:
             "status": {
                 "_ts": int(time.time()),
                 "state": {
-                    "text": "Operational", # or "Offline"... etc
+                    "text": "Operational" if data.get("print_progress") and float(data["print_progress"]) > 0 else "Offline",  # or "Offline"... etc
                     "flags": {
                         "operational": True,
-                        "printing": False, # true if the printer is currently printing, false otherwise
-                        "cancelling": False, # true if the printer is currently printing and in the process of pausing, false otherwise
-                        "pausing": False, # true if the printer is currently printing and in the process of pausing, false otherwise
+                        "printing": float(data.get("print_progress", 0)) > 0,  # true if the printer is currently printing, false otherwise
+                        "cancelling": False,  # true if the printer is currently printing and in the process of pausing, false otherwise
+                        "pausing": False,  # true if the printer is currently printing and in the process of pausing, false otherwise
                         "resuming": False,
                         "finishing": False,
-                        "closedOrError": False, # true if the printer is disconnected (possibly due to an error), false otherwise
-                        "error": False, # true if an unrecoverable error occurred, false otherwise
-                        "paused": False, # true if the printer is currently paused, false otherwise
-                        "ready": True, # true if the printer is operational and no data is currently being streamed to SD, so ready to receive instructions
-                        "sdReady": True # true if the printer’s SD card is available and initialized, false otherwise. This is redundant information to the SD State.
+                        "closedOrError": False,  # true if the printer is disconnected (possibly due to an error), false otherwise
+                        "error": False,  # true if an unrecoverable error occurred, false otherwise
+                        "paused": False,  # true if the printer is currently paused, false otherwise
+                        "ready": True,  # true if the printer is operational and no data is currently being streamed to SD, so ready to receive instructions
+                        "sdReady": True  # true if the printer’s SD card is available and initialized, false otherwise. This is redundant information to the SD State.
                     },
-                    "error": ""
+                    "error": data.get("print_status", "")
                 },
                 "job": {
                     "file": {
-                        "name": "example.gcode",
+                        "name": data.get("gcode_filename", "example.gcode"),
                         "path": "/path/to/example.gcode",
-                        "display": "Example GCode",
+                        "display": data.get("gcode_filename", "Example GCode"),
                         "origin": "local",
                         "size": 123456,
-                        "date": "2025-01-01T23:00:10.000000Z"
+                        "date": data.get("start_time", "2025-01-01T23:00:10.000000Z")
                     },
-                    "estimatedPrintTime": 3600,
+                    "estimatedPrintTime": int(data.get("print_time_left", 0)) + int(data.get("print_time", 0)),
                     "averagePrintTime": 3500,
                     "lastPrintTime": 3400,
                     "filament": {
@@ -228,23 +286,23 @@ class ObicoComponent:
                 "currentZ": 5.0,
                 "currentFeedRate": 100,
                 "currentFlowRate": 100,
-                "currentFanSpeed": 100,
+                "currentFanSpeed": float(data.get("cooling_fan_speed", 100)),
                 "progress": {
-                    "completion": 50,
+                    "completion": float(data.get("print_progress", 0)),
                     "filepos": 123456,
-                    "printTime": 1800,
-                    "printTimeLeft": 1800,
+                    "printTime": int(data.get("print_time", 0)),
+                    "printTimeLeft": int(data.get("print_time_left", 0)),
                     "printTimeLeftOrigin": "estimate"
                 },
                 "temperatures": {
                     "tool0": {
-                        "actual": 200,
-                        "target": 200,
+                        "actual": float(data.get("nozzle_temperature", 0)),
+                        "target": float(data.get("nozzle_target_temperature", 200)),
                         "offset": 0
                     },
                     "bed": {
-                        "actual": 60,
-                        "target": 60,
+                        "actual": float(data.get("bed_temperature", 0)),
+                        "target": float(data.get("bed_target_temperature", 60)),
                         "offset": 0
                     },
                     "chamber": {
@@ -256,7 +314,7 @@ class ObicoComponent:
                 "file_metadata": {
                     "hash": "abc123",
                     "obico": {
-                        "totalLayerCount": 100
+                        "totalLayerCount": int(data.get("total_layers", 0))
                     },
                     "analysis": {
                         "printingArea": {
@@ -294,7 +352,7 @@ class ObicoComponent:
                         }
                     },
                     "history": {
-                        "timestamp": "2025-02-22T23:05:10.652919Z",
+                        "timestamp": data.get("start_time", "2025-02-22T23:05:10.652919Z"),
                         "printTime": 3600,
                         "success": True,
                         "printerProfile": "default"

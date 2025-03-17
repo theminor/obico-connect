@@ -43,7 +43,8 @@ class ObicoConnectConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_ENDPOINT_PREFIX: self.endpoint_prefix,
                     "camera_entity_id": camera_entity_id,
                     "update_interval": update_interval,
-                    "printer_device_id": printer_device_id
+                    "printer_device_id": printer_device_id,
+                    "device_type": self.device_type
                 })
 
         registry = async_get_entity_registry.async_get(self.hass)
