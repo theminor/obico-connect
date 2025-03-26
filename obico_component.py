@@ -178,10 +178,6 @@ class ObicoComponent:
         # Fetch data from Bambu Lab component
         data = {}
         try:
-            data["percent_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_progress").state
-            data["current_stage"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_stage").state
-            data["gcode_filename"] = self.hass.states.get(f"sensor.{self.printer_device_id}_gcode_filename").state
-
             bambu_status = self.hass.states.get(f"sensor.{self.printer_device_id}_print_status").state.lower()  # Bambu sends: "failed", "finish", "idle", "init", "offline", "pause", "prepare", "running", "slicing", "unknown" --> Obico wants: STARTED, ENDED, PAUSED, RESUMED, FAILURE_ALERTED, ALERT_MUTED, ALERT_UNMUTED, FILAMENT_CHANGE, PRINTER_ERROR
             status_mapping = {
                 "running": "STARTED",
@@ -193,20 +189,37 @@ class ObicoComponent:
                 "init": "STARTED",
                 "offline": "PRINTER_ERROR",
                 "slicing": "STARTED",
-                "unknown": "PRINTER_ERROR"
+                "unknown": "PRINTER_ERROR",
+                "none": None
             }
-            data["print_status"] = status_mapping.get(bambu_status, "PRINTER_ERROR")
-            data["operational"] = bambu_status not in ["offline", "unknown"]
-            data["printing"] = bambu_status in ["running", "prepare", "slicing"]
-            data["pausing"] = bambu_status == "pause"  # might need to find a better way to determine this
-            data["resuming"] = bambu_status == "running"  # might need to find a better way to determine this
-            data["finishing"] = bambu_status == "finish"  # might need to find a better way to determine this
-            data["closedOrError"] = bambu_status in ["failed", "offline", "unknown"]
-            data["error"] = bambu_status == "failed"
-            data["paused"] = bambu_status == "pause"
-            data["ready"] = bambu_status in ["idle", "finish", "init", "slicing"]
-            data["sdReady"] = bambu_status not in ["offline", "unknown"]  # might need to find a better way to determine this
-            if bambu_status == "failed": data["error"] = "Failed" elif bambu_status == "offline" data["error"] = "Offline" elif bambu_status == "unknown" data["error"] = "Unknown" else data["error"] = ""  # might need to find a better way to determine this
+            if bambu_status == "none":
+                data["print_status"] = None
+                data["operational"] = None
+                data["printing"] = None
+                data["pausing"] = None
+                data["resuming"] = None
+                data["finishing"] = None
+                data["closedOrError"] = None
+                data["error"] = None
+                data["paused"] = None
+                data["ready"] = None
+                data["sdReady"] = None
+            else:
+                data["print_status"] = status_mapping.get(bambu_status)
+                data["operational"] = bambu_status not in ["offline", "unknown"]
+                data["printing"] = bambu_status in ["running", "prepare", "slicing"]
+                data["pausing"] = bambu_status == "pause"  # might need to find a better way to determine this
+                data["resuming"] = bambu_status == "running"  # might need to find a better way to determine this
+                data["finishing"] = bambu_status == "finish"  # might need to find a better way to determine this
+                data["closedOrError"] = bambu_status in ["failed", "offline", "unknown"]
+                data["error"] = bambu_status == "failed"
+                data["paused"] = bambu_status == "pause"
+                data["ready"] = bambu_status in ["idle", "finish", "init", "slicing"]
+                data["sdReady"] = bambu_status not in ["offline", "unknown"]  # might need to find a better way to determine this
+            data["error"] = {"failed": "Failed", "offline": "Offline", "unknown": "Unknown"}.get(bambu_status)
+            data["percent_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_progress").state
+            data["current_stage"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_stage").state
+            data["gcode_filename"] = self.hass.states.get(f"sensor.{self.printer_device_id}_gcode_filename").state
             data["start_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_start_time").state  # time stamp
             data["end_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_end_time").state  # time stamp
             data["remaining_time"] = self.hass.states.get(f"sensor.{self.printer_device_id}_remaining_time").state  # minutes
@@ -217,19 +230,13 @@ class ObicoComponent:
                 data["total_print_time"] = total_print_time
             except Exception as e:
                 _LOGGER.warning(f"Error calculating total print time: {e}")
-                data["total_print_time"] = "Unknown"
+                data["total_print_time"] = None
             data["cooling_fan_speed"] = self.hass.states.get(f"sensor.{self.printer_device_id}_cooling_fan_speed").state
             data["percent_print_progress"] = self.hass.states.get(f"sensor.{self.printer_device_id}_print_progress").state
             data["nozzle_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_temperature").state
             data["nozzle_target_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_target_temperature").state
             data["bed_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_temperature").state
             data["bed_target_temperature"] = self.hass.states.get(f"sensor.{self.printer_device_id}_bed_target_temperature").state
-            #data["current_layer"] = self.hass.states.get(f"sensor.{self.printer_device_id}_current_layer").state
-            #data["total_layers"] = self.hass.states.get(f"sensor.{self.printer_device_id}_total_layers").state
-            #data["active_tray"] = self.hass.states.get(f"sensor.{self.printer_device_id}_active_tray").state
-            #data["heatbreak_fan_speed"] = self.hass.states.get(f"sensor.{self.printer_device_id}_heatbreak_fan_speed").state
-            #data["nozzle_size"] = self.hass.states.get(f"sensor.{self.printer_device_id}_nozzle_size").state
-            #data["ip_address"] = self.hass.states.get(f"sensor.{self.printer_device_id}_ip_address").state
         except Exception as e:
             _LOGGER.warning(f"Error fetching Bambu Lab data: {e}")
         return data
