@@ -307,7 +307,7 @@ class ObicoComponent:
                     #        "length": 1000,
                     #        "volume": 10
                     #    }
-                    },
+                    #},
                     #"user": "User Name",
                 },
                 #"currentLayerHeight": 0.2,
